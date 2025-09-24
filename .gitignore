@@ -7,6 +7,7 @@ __pycache__/
 *.jpg
 *.mp4
 *.mov
+*.pth
 
 # Ignore Jupyter Notebook checkpoints
 *.ipynb_checkpoints/

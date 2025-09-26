@@ -2,8 +2,7 @@ import cv2
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-import threading
-import pyperclip  # For clipboard functionality
+import threading  # For clipboard functionality
 import glob
 
 def select_video():

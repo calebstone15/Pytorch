@@ -2,6 +2,8 @@
 Batch Inference Script for Burn Detection
 Process multiple images in a directory with parallel processing for GPU acceleration
 """
+
+# Import necessary libraries
 import os
 import torch
 import torchvision.transforms as transforms
@@ -19,6 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 
 # Add the directory containing oneshotattempt2.py to the Python path
+# This allows importing the `get_model`, `CLASSES`, and `NUM_CLASSES` from another script
 module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
@@ -26,9 +29,10 @@ if module_path not in sys.path:
 # Import necessary functions from your training script
 from oneshotattempt2 import get_model, CLASSES, NUM_CLASSES
 
-# Config file to store last used paths
+# Path to the configuration file for saving user preferences
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "batch_inference_config.json")
 
+# Function to load configuration from a JSON file
 def load_config():
     """Load configuration from file"""
     if os.path.exists(CONFIG_FILE):
@@ -39,11 +43,13 @@ def load_config():
             return {}
     return {}
 
+# Function to save configuration to a JSON file
 def save_config(config):
     """Save configuration to file"""
     with open(CONFIG_FILE, 'w') as f:
         json.dump(config, f)
 
+# Function to load a trained model from disk
 def load_model(model_path, device):
     """Load a trained model from disk"""
     try:
@@ -58,6 +64,7 @@ def load_model(model_path, device):
         print(f"Error loading model: {e}")
         return None
 
+# Function to process a batch of images in one forward pass
 def process_image_batch(model, image_batch, device, confidence_threshold=0.5):
     """Process a batch of images in one forward pass"""
     with torch.no_grad():
@@ -78,6 +85,7 @@ def process_image_batch(model, image_batch, device, confidence_threshold=0.5):
     
     return results
 
+# Function to load and preprocess an image for inference
 def load_and_transform_image(image_path, transform):
     """Load and preprocess an image for inference"""
     try:
@@ -88,6 +96,7 @@ def load_and_transform_image(image_path, transform):
         print(f"Error loading image {image_path}: {e}")
         return None, None
 
+# Function to save an image with detection visualizations
 def save_detection_image(image, boxes, labels, scores, output_path):
     """Save an image with detection visualizations"""
     try:
@@ -121,6 +130,7 @@ def save_detection_image(image, boxes, labels, scores, output_path):
         print(f"Error saving detection image {output_path}: {e}")
         return False
 
+# Function to process all images in a directory with batching for GPU acceleration
 def process_directory(model, image_dir, output_dir, transform, device, confidence_threshold=0.5, batch_size=4):
     """Process all images in a directory with batching for GPU acceleration"""
     # Create output directory if it doesn't exist
@@ -212,6 +222,7 @@ def process_directory(model, image_dir, output_dir, transform, device, confidenc
     
     return results
 
+# Function to open a dialog to select a file or directory
 def select_file_or_directory(title, is_file=False, initialdir=None):
     """Open a dialog to select a file or directory"""
     root = tk.Tk()
@@ -227,6 +238,7 @@ def select_file_or_directory(title, is_file=False, initialdir=None):
     root.destroy()  # Properly destroy the tkinter window
     return path
 
+# Function to get all necessary paths from the user
 def get_paths():
     """Get all necessary paths from user with a single tkinter instance"""
     config = load_config()
@@ -277,6 +289,7 @@ def get_paths():
     
     return input_dir, output_dir, model_path
 
+# Main function to execute the batch inference process
 def main():
     # Get paths from user
     input_dir, output_dir, model_path = get_paths()
@@ -343,5 +356,6 @@ def main():
     
     input("Press Enter to exit...")
 
+# Entry point of the script
 if __name__ == "__main__":
     main()

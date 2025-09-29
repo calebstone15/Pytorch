@@ -1,6 +1,10 @@
+
+
 # Ignore Python cache files
 __pycache__/
 *.pyc
+*.txt
+*.pt
 
 # Ignore large media files
 *.png

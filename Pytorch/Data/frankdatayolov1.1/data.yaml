@@ -1,0 +1,13 @@
+path: C:\\Users\\caleb\\OneDrive - Embry-Riddle Aeronautical University\\Documents\\Coding\\Pytorch\\Pytorch\\Data\\frankdatayolov1.1
+train: C:\\Users\\caleb\\OneDrive - Embry-Riddle Aeronautical University\\Documents\\Coding\\Pytorch\\Pytorch\\Data\\frankdatayolov1.1\\images
+val: C:\\Users\\caleb\\OneDrive - Embry-Riddle Aeronautical University\\Documents\\Coding\\Pytorch\\Pytorch\\Data\\frankdatayolov1.1\\images
+labels: "C:\\Users\\caleb\\Downloads\\cvatcvat3\\yolo_output\\labels"
+# Classes
+nc: 6
+names:
+  0: Off-Nominal
+  1: Nominal
+  2: Fire
+  3: Melting
+  4: Fluid Leak
+  5: Venting/Smoke

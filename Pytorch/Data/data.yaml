@@ -1,0 +1,9 @@
+names:
+  0: Off-Nominal
+  1: Nominal
+  2: Fire
+  3: Melting
+  4: Fluid Leak
+  5: Venting/Smoke
+path: .
+train: train.txt

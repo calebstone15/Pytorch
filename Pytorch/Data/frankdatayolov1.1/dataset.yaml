@@ -1,0 +1,15 @@
+# YAML paths should use forward slashes
+path: C:/Users/caleb/OneDrive - Embry-Riddle Aeronautical University/Documents/Coding/Pytorch/Pytorch/Data/frankdatayolov1.1
+train: images  # Use relative paths since you defined the base path above
+val: images    # Use relative paths
+labels: "C:/Users/caleb/OneDrive - Embry-Riddle Aeronautical University/Documents/Coding/Pytorch/Pytorch/Data/frankdatayolov1.1/labels"  # Use relative paths
+
+# Classes
+nc: 6  # Explicitly state number of classes
+names:
+  0: Off-Nominal
+  1: Nominal
+  2: Fire
+  3: Melting
+  4: Fluid Leak
+  5: Venting/Smoke

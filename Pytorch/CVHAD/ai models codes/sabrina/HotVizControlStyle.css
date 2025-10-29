@@ -1,0 +1,39 @@
+html, body {
+    margin: 0; /* Removes default margin */
+    padding: 0; /* Removes default padding */
+}
+
+.header-container {
+    position: fixed; /* Makes the header stick to the top */
+    top: 0; /* Positions it at the very top */
+    width: 100%; /* Ensures it spans the full width of the screen */
+    z-index: 1000; /* Keeps it above other elements */
+    display: flex;
+    justify-content: space-around; /* Distributes items evenly with space around them */
+    align-items: center; /* Vertically centers the content */
+    height: 50px; /* Matches the height of the header */
+    line-height: 50px; /* Matches the height of the header */
+}
+
+.header-left h1,
+.header-right h1 {
+    margin: 0; /* Removes default margin */
+    font-size: 25px; /* Adjust font size as needed */
+}
+
+.header-left {
+    display: flex;
+    justify-content: center; /* Centers the text horizontally */
+    align-items: center; /* Centers the text vertically */
+    background: linear-gradient(to left, #65c7e8, #0436ffdf); /* Light gray background */
+    flex: 1; /* Takes up equal space */
+}
+
+.header-right {
+    display: flex;
+    justify-content: center; /* Centers the text horizontally */
+    align-items: center; /* Centers the text vertically */
+    background: #ff4646; /* Light gray background */
+    flex: 1; /* Takes up equal space */
+    background: linear-gradient(to right, #fe0000, #e821b6);
+}

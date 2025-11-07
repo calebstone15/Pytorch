@@ -1,0 +1,8 @@
+connection w/o internet to pi
+ssh caleb@cspi5.local
+  cd HDAA
+    source venv/bin/activate
+
+via internet:
+ip address = 192.168.2.2
+  ssh caleb@192.168.2.2

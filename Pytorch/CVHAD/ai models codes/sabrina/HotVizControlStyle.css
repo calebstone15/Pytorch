@@ -37,3 +37,24 @@ html, body {
     flex: 1; /* Takes up equal space */
     background: linear-gradient(to right, #fe0000, #e821b6);
 }
+
+.video-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+    height: calc(100vh - 50px);
+}
+
+.video-left, .video-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.video-left img, .video-right img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

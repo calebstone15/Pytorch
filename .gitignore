@@ -12,6 +12,7 @@ __pycache__/
 *.mp4
 *.mov
 *.pth
+*.cr3
 
 # Ignore Jupyter Notebook checkpoints
 *.ipynb_checkpoints/

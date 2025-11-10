@@ -6,7 +6,7 @@ import os
 class ConverterApp:
     def __init__(self, root):
         self.root = root
-        root.setTitle("MP4 Re-Wrapper")
+        root.title("MP4 Re-Wrapper")
         root.geometry("600x400")
         
         self.file_paths = []

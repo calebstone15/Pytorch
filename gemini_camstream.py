@@ -22,10 +22,7 @@
 #
 
 import io
-import logging
-import socketserver
 import time
-from http import server
 from threading import Condition
 
 from flask import Flask, Response, render_template_string
@@ -143,6 +140,6 @@ if __name__ == '__main__':
     # threaded=True allows the server to handle multiple requests simultaneously
     print("Starting 1080p camera streaming server...")
     print("Open your browser and go to http://<YOUR_PI_IP>:8000")
-    app.run(host='0.0.0.0', port=8000, threaded=True)
+    app.run(host='0.0.0.0', port=8000, threaded=True)  # nosec B104
 
 

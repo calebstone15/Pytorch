@@ -52,7 +52,9 @@ class ConverterApp:
     def check_ffmpeg(self):
         """Checks if ffmpeg is installed and accessible."""
         try:
-            subprocess.run(["ffmpeg", "-version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # nosec B607: Starting process with partial path 'ffmpeg' - assumed to be in PATH
+            # nosec B603: subprocess call - check for execution of untrusted input
+            subprocess.run(["ffmpeg", "-version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) # nosec B607, B603
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             self.log("ERROR: ffmpeg not found!")
@@ -110,10 +112,11 @@ class ConverterApp:
                     "-y",              # Overwrite output file without asking
                     out_path           # Output file
                 ]
-                
+
                 # Run the command
-                subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                
+                # nosec B603: subprocess call - check for execution of untrusted input. Input is filename selected by user.
+                subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # nosec B603
+
                 self.log(f"SUCCESS: Saved {os.path.basename(out_path)}")
                 success_count += 1
                 

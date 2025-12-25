@@ -375,244 +375,190 @@ def format_time(seconds):
 def visualize_predictions(model, dataset, device, num_images=5, confidence_threshold=0.5):
     """Visualize model predictions on sample images"""
     model.eval()
-
-    # Ensure we don't try to visualize more images than exist in the dataset
     num_images = min(num_images, len(dataset))
-
     if num_images == 0:
         print("No images to visualize!")
         return
 
-    # Create figure with appropriate size based on number of images
     fig, axs = plt.subplots(num_images, 2, figsize=(15, 5*num_images))
-
-    # Handle the case where there's only one image (axs would be 1D)
     if num_images == 1:
         axs = axs.reshape(1, -1)
 
     for i in range(num_images):
         try:
-            # Get image and target
-            img, target = dataset[i]
-
-            # Convert image tensor for display
-            # If image is already a tensor with shape [C,H,W]
-            if isinstance(img, torch.Tensor) and img.dim() == 3:
-                img_np = img.permute(1, 2, 0).cpu().numpy()
-                # Normalize to [0,1] range if needed
-                if img_np.max() > 1.0:
-                    img_np = img_np / 255.0
-                # Clip to valid range
-                img_np = np.clip(img_np, 0, 1)
-            else:
-                # If image is not a tensor or has unexpected shape
-                print(f"Warning: Unexpected image format for image {i}, skipping")
-                continue
-
-            # Show ground truth
-            axs[i, 0].imshow(img_np)
-            axs[i, 0].set_title('Ground Truth')
-            axs[i, 0].axis('off')
-
-            # Draw ground truth boxes
-            if 'boxes' in target and len(target['boxes']) > 0:
-                for box, label in zip(target['boxes'].cpu().numpy(), target['labels'].cpu().numpy()):
-                    x1, y1, x2, y2 = box
-                    rect = patches.Rectangle(
-                        (x1, y1), x2-x1, y2-y1,
-                        linewidth=2, edgecolor='r', facecolor='none'
-                    )
-                    axs[i, 0].add_patch(rect)
-
-                    # Use label to get class name, ensure it's a valid index
-                    class_name = CLASSES[label] if 0 <= label < len(CLASSES) else f"Unknown ({label})"
-                    axs[i, 0].text(
-                        x1, y1, class_name,
-                        bbox=dict(facecolor='yellow', alpha=0.5),
-                        fontsize=10, color='black'
-                    )
-            else:
-                axs[i, 0].text(10, 10, "No annotations", fontsize=12)
-
-            # Make prediction
-            with torch.no_grad():
-                # Ensure image is on the right device
-                prediction = model([img.to(device)])[0]
-
-            # Show prediction
-            axs[i, 1].imshow(img_np)
-            axs[i, 1].set_title('Prediction')
-            axs[i, 1].axis('off')
-
-            # Check if we have any predictions
-            if len(prediction['boxes']) > 0:
-                boxes = prediction['boxes'].cpu().numpy()
-                labels = prediction['labels'].cpu().numpy()
-                scores = prediction['scores'].cpu().numpy()
-
-                # Filter by confidence
-                mask = scores >= confidence_threshold
-                filtered_boxes = boxes[mask]
-                filtered_labels = labels[mask]
-                filtered_scores = scores[mask]
-
-                # Display predictions
-                for box, label, score in zip(filtered_boxes, filtered_labels, filtered_scores):
-                    x1, y1, x2, y2 = box
-                    rect = patches.Rectangle(
-                        (x1, y1), x2-x1, y2-y1,
-                        linewidth=2, edgecolor='b', facecolor='none'
-                    )
-                    axs[i, 1].add_patch(rect)
-
-                    # Use label to get class name, ensure it's a valid index
-                    class_name = CLASSES[label] if 0 <= label < len(CLASSES) else f"Unknown ({label})"
-                    axs[i, 1].text(
-                        x1, y1, f"{class_name}: {score:.2f}",
-                        bbox=dict(facecolor='cyan', alpha=0.5),
-                        fontsize=10, color='black'
-                    )
-
-                if len(filtered_boxes) == 0:
-                    axs[i, 1].text(10, 10, "No detections above threshold", fontsize=12)
-            else:
-                axs[i, 1].text(10, 10, "No detections", fontsize=12)
-
+            _visualize_single_image(dataset, model, device, i, axs[i], confidence_threshold)
         except Exception as e:
             print(f"Error visualizing image {i}: {e}")
-            # If there's an error, create an empty plot with error message
-            if i < num_images:
-                axs[i, 0].text(0.5, 0.5, f"Error: {str(e)}",
-                              horizontalalignment='center',
-                              verticalalignment='center',
-                              transform=axs[i, 0].transAxes)
-                axs[i, 1].text(0.5, 0.5, f"Error: {str(e)}",
-                              horizontalalignment='center',
-                              verticalalignment='center',
-                              transform=axs[i, 1].transAxes)
-                axs[i, 0].axis('off')
-                axs[i, 1].axis('off')
+            _show_error_on_plot(axs[i], str(e))
 
     plt.tight_layout()
     plt.savefig("prediction_visualization.png")
     plt.show()
 
-def main():
-    # Check for GPU availability with graceful fallback
+def _visualize_single_image(dataset, model, device, index, ax_row, confidence_threshold):
+    """Helper function to visualize a single image"""
+    img, target = dataset[index]
+    img_np = _process_image_for_display(img)
+    if img_np is None:
+        return
+
+    # Ground Truth
+    ax_row[0].imshow(img_np)
+    ax_row[0].set_title('Ground Truth')
+    ax_row[0].axis('off')
+    if 'boxes' in target and len(target['boxes']) > 0:
+        _draw_boxes(ax_row[0], target['boxes'].cpu().numpy(), target['labels'].cpu().numpy(), is_ground_truth=True)
+    else:
+        ax_row[0].text(10, 10, "No annotations", fontsize=12)
+
+    # Prediction
+    with torch.no_grad():
+        prediction = model([img.to(device)])[0]
+
+    ax_row[1].imshow(img_np)
+    ax_row[1].set_title('Prediction')
+    ax_row[1].axis('off')
+
+    if len(prediction['boxes']) > 0:
+        _draw_prediction_boxes(ax_row[1], prediction, confidence_threshold)
+    else:
+        ax_row[1].text(10, 10, "No detections", fontsize=12)
+
+def _process_image_for_display(img):
+    """Convert tensor image to numpy array for display"""
+    if isinstance(img, torch.Tensor) and img.dim() == 3:
+        img_np = img.permute(1, 2, 0).cpu().numpy()
+        if img_np.max() > 1.0:
+            img_np = img_np / 255.0
+        return np.clip(img_np, 0, 1)
+    print("Warning: Unexpected image format, skipping")
+    return None
+
+def _draw_boxes(ax, boxes, labels, scores=None, is_ground_truth=False):
+    """Draw bounding boxes on the axis"""
+    color = 'r' if is_ground_truth else 'b'
+    bg_color = 'yellow' if is_ground_truth else 'cyan'
+
+    for i, (box, label) in enumerate(zip(boxes, labels)):
+        x1, y1, x2, y2 = box
+        rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=2, edgecolor=color, facecolor='none')
+        ax.add_patch(rect)
+
+        class_name = CLASSES[label] if 0 <= label < len(CLASSES) else f"Unknown ({label})"
+        text = class_name
+        if scores is not None:
+            text += f": {scores[i]:.2f}"
+
+        ax.text(x1, y1, text, bbox={'facecolor': bg_color, 'alpha': 0.5}, fontsize=10, color='black')
+
+def _draw_prediction_boxes(ax, prediction, confidence_threshold):
+    """Filter and draw prediction boxes"""
+    boxes = prediction['boxes'].cpu().numpy()
+    labels = prediction['labels'].cpu().numpy()
+    scores = prediction['scores'].cpu().numpy()
+
+    mask = scores >= confidence_threshold
+    filtered_boxes = boxes[mask]
+    filtered_labels = labels[mask]
+    filtered_scores = scores[mask]
+
+    if len(filtered_boxes) > 0:
+        _draw_boxes(ax, filtered_boxes, filtered_labels, filtered_scores, is_ground_truth=False)
+    else:
+        ax.text(10, 10, "No detections above threshold", fontsize=12)
+
+def _show_error_on_plot(ax_row, error_msg):
+    """Display error message on the plot"""
+    for ax in ax_row:
+        ax.text(0.5, 0.5, f"Error: {error_msg}", horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+        ax.axis('off')
+
+def setup_device():
+    """Setup and return the computing device (GPU/CPU), batch size and workers."""
     print(f"PyTorch version: {torch.__version__}")
     print("Checking PyTorch CUDA configuration:")
     print(f"PyTorch built with CUDA: {torch.version.cuda}")
     print(f"CUDA available: {torch.cuda.is_available()}")
 
-    # Determine device with fallback to CPU if CUDA fails
     try:
         if torch.cuda.is_available():
             print(f"CUDA device count: {torch.cuda.device_count()}")
             print(f"CUDA device name: {torch.cuda.get_device_name(0)}")
-
-            # Try to use CUDA
-            device = torch.device('cuda')
             print(f"Using CUDA device: {torch.cuda.get_device_name(0)}")
-
-            # Print CUDA memory information
             print(f"Total GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
-            batch_size = 2  # Can use larger batch size with GPU
-            num_workers = 2  # Can use workers with GPU
+            return torch.device('cuda'), 2, 2
         else:
-            device = torch.device('cpu')
-            batch_size = 1  # Smaller batch size for CPU
-            num_workers = 0  # No workers for CPU
             print("CUDA not available, using CPU instead.")
             print("For training on GPU with Python 3.11, install PyTorch with CUDA support:")
             print("pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121")
     except Exception as e:
-        device = torch.device('cpu')
-        batch_size = 1
-        num_workers = 0
         print(f"Error checking CUDA availability: {e}")
         print("Falling back to CPU.")
 
-    print(f"Using device: {device}")
+    return torch.device('cpu'), 1, 0
 
-    # Data directories - replace with your actual paths
-    annotations_file = "C:\\Users\\caleb\\OneDrive - Embry-Riddle Aeronautical University\\Documents\\Coding\\Schiliren\\Pytorch\\Data\\oneshottest\\annotations\\instances_default.json"
-    images_dir = "C:\\Users\\caleb\\OneDrive - Embry-Riddle Aeronautical University\\Documents\\Coding\\Schiliren\\Pytorch\\Data\\oneshottest\\images"
-
-    # Check if files exist
+def prepare_data(annotations_file, images_dir, batch_size, num_workers):
+    """Load dataset and create dataloaders."""
     print(f"Checking if annotation file exists: {os.path.exists(annotations_file)}")
     print(f"Checking if images directory exists: {os.path.exists(images_dir)}")
 
     if not os.path.exists(annotations_file):
         print(f"ERROR: Annotation file not found at: {annotations_file}")
-        return
+        return None, None
 
     if not os.path.exists(images_dir):
         print(f"ERROR: Images directory not found at: {images_dir}")
-        return
+        return None, None
 
-    # Data transforms
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+    transform = transforms.Compose([transforms.ToTensor()])
 
-    # Create dataset
     try:
         dataset = COCODataset(annotations_file, images_dir, transform=transform)
         print(f"Dataset contains {len(dataset)} images")
 
         if len(dataset) == 0:
             print("ERROR: Dataset is empty. Please check your annotations and image files.")
-            return
+            return None, None
 
-        # Split dataset into train and validation
         train_size = int(0.8 * len(dataset))
         val_size = len(dataset) - train_size
 
         if train_size == 0 or val_size == 0:
             print("ERROR: Not enough data to split into train and validation sets.")
-            return
+            return None, None
 
         train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
         print(f"Training set: {len(train_dataset)} images")
         print(f"Validation set: {len(val_dataset)} images")
+
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            collate_fn=collate_fn
+        )
+
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            collate_fn=collate_fn
+        )
+        return train_loader, val_loader, val_dataset
     except Exception as e:
         print(f"Error creating dataset: {e}")
         import traceback
         traceback.print_exc()
-        return
+        return None, None
 
-    # Create data loaders
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-        collate_fn=collate_fn
-    )
-
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=num_workers,
-        collate_fn=collate_fn
-    )
-
-    # Create model
-    model = get_model(NUM_CLASSES)
-    model.to(device)
-
-    # Set up optimizer
+def train_model(model, train_loader, val_loader, device, num_epochs=50):
+    """Run training loop."""
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
-
-    # Learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
-    # Train model
-    num_epochs = 50  # Changed from conditional 10/5 to fixed 50 epochs
-
-    # Metrics tracking
     train_losses = []
     val_metrics = []
     total_start_time = time.time()
@@ -625,7 +571,6 @@ def main():
             train_losses.append(loss)
             lr_scheduler.step()
 
-            # Evaluate on validation set
             print("Evaluating on validation set:")
             metrics = evaluate_accuracy(model, val_loader, device)
             val_metrics.append(metrics)
@@ -639,12 +584,9 @@ def main():
             print(f"  Loss: {loss:.4f}, Accuracy: {metrics['accuracy']:.4f}, F1: {metrics['f1_score']:.4f}")
             print(f"  Epoch time: {format_time(epoch_time)}, Elapsed: {format_time(elapsed_time)}, Remaining: {format_time(remaining_time)}")
 
-            # Save checkpoint after each epoch
             checkpoint_path = f"burn_detection_checkpoint_epoch_{epoch+1}.pth"
             save_model(model, checkpoint_path)
             print(f"  Saved checkpoint to {checkpoint_path}")
-
-            # Removed plotting after each epoch to avoid interrupting training
 
     except KeyboardInterrupt:
         print("Training interrupted by user. Saving current model...")
@@ -654,18 +596,33 @@ def main():
         import traceback
         traceback.print_exc()
 
-    # Calculate and display total training time
     total_training_time = time.time() - total_start_time
     print(f"Total training time: {format_time(total_training_time)}")
 
-    # Save the final trained model
+    return train_losses, val_metrics
+
+def main():
+    device, batch_size, num_workers = setup_device()
+    print(f"Using device: {device}")
+
+    annotations_file = "C:\\Users\\caleb\\OneDrive - Embry-Riddle Aeronautical University\\Documents\\Coding\\Schiliren\\Pytorch\\Data\\oneshottest\\annotations\\instances_default.json"
+    images_dir = "C:\\Users\\caleb\\OneDrive - Embry-Riddle Aeronautical University\\Documents\\Coding\\Schiliren\\Pytorch\\Data\\oneshottest\\images"
+
+    result = prepare_data(annotations_file, images_dir, batch_size, num_workers)
+    if result is None or result[0] is None:
+        return
+    train_loader, val_loader, val_dataset = result
+
+    model = get_model(NUM_CLASSES)
+    model.to(device)
+
+    train_losses, val_metrics = train_model(model, train_loader, val_loader, device)
+
     save_model(model, "burn_detection_model_final.pth")
 
-    # Plot final metrics only at the end of training
     print("Generating final training metrics plot...")
     plot_metrics(train_losses, val_metrics, "final_training_metrics.png")
 
-    # Visualize some predictions
     print("Generating prediction visualizations...")
     visualize_predictions(model, val_dataset, device)
 

@@ -888,13 +888,13 @@ def update_settings():
             return jsonify({"error": "Stop recording before changing settings"}), 400
         try:
             try:
-                picam.stop_recording();
-            except Exception:
-                pass
+                picam.stop_recording()
+            except Exception as e:
+                logging.warning(f"Error stopping recording during update: {e}")
             try:
-                picam.stop();
-            except Exception:
-                pass
+                picam.stop()
+            except Exception as e:
+                logging.warning(f"Error stopping camera during update: {e}")
 
             config = picam.create_video_configuration(
                 main={"size": profile["main"]},
@@ -965,7 +965,8 @@ if __name__ == '__main__':
     initialize_cameras()
     
     # Start the Flask web server
-    logging.info("Starting Flask server on http://0.0.0.0:8000")
+    host_ip = os.environ.get('FLASK_HOST', '0.0.0.0')
+    logging.info(f"Starting Flask server on http://{host_ip}:8000")
     # 'use_reloader=False' is important to prevent re-initialization on save
     # 'threaded=True' is essential for handling multiple clients and streams
-    app.run(host='0.0.0.0', port=8000, threaded=True, use_reloader=False)
+    app.run(host=host_ip, port=8000, threaded=True, use_reloader=False)

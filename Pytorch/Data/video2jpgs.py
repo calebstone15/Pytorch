@@ -120,8 +120,10 @@ def main():
     # Try to make window prettier on macOS
     try:
         window.tk.call('::tk::unsupported::MacWindowStyle', 'style', window._w, 'document', 'modified')
-    except:
+    except tk.TclError:
         pass  # Ignore if not on macOS
+    except Exception as e:
+        print(f"Warning: Could not set Mac window style: {e}")
     
     # --- Create Notebook for Tabs ---
     notebook = ttk.Notebook(window)
